@@ -143,6 +143,23 @@
         stickerTable.appendChild(cell);
       }
     }
+
+    function exportToImage() {
+      const stickerTable = document.getElementById("stickerTable");
+
+      html2canvas(stickerTable, { scale: 2 }).then((canvas) => {
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = "stickers_A4.png";
+        link.click();
+      });
+    }
+
+    function openTableInNewWindow() {
+      const newWindow = window.open("", "_blank");
+      newWindow.document.write("<html><body>" + document.getElementById("stickerTable").outerHTML + "</body></html>");
+      newWindow.document.close();
+    }
   </script>
 </body>
 </html>
