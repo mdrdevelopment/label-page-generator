@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sticker Generator</title>
+  <link rel="stylesheet" href="https://bootswatch.com/5/united/bootstrap.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <style>
+    #stickerTable {
+      display: grid;
+      width: 210mm;
+      height: 297mm;
+      border: 0;
+    }
+    .sticker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .sticker img {
+      position: absolute;
+    }
+  </style>
+</head>
+<body class="container mt-4">
+  <h2 class="text-center mb-4">Sticker Generator</h2>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Label Size:</label>
+      <select id="labelSize" class="form-select" onchange="updateSize()">
+        <option value="40">40 (52.5 x 29.7mm)</option>
+        <option value="65">65 (38.1 x 21.2mm)</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Upload Images:</label>
+      <input type="file" id="imageUpload" class="form-control" multiple />
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <label class="form-label">Image Fit Mode:</label>
+      <select id="fitMode" class="form-select">
+        <option value="stretch">Stretch</option>
+        <option value="fill">Fill</option>
+        <option value="fit">Fit</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-check-label">
+        <input type="checkbox" id="autoRotate" class="form-check-input"> Automatically Rotate if Fits Better
+      </label>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <button class="btn btn-primary" onclick="generateStickers()">Generate Stickers</button>
+    <br /><br />
+    <button class="btn btn-success m-1" onclick="exportToPDF_jsPDF()">Export (jsPDF)</button>
+    <button class="btn btn-warning m-1" onclick="exportToPDF_PDFLib()">Export (PDF‑Lib)</button>
+    <button class="btn btn-info m-1" onclick="exportToImage()">Export as Image (PNG)</button>
+    <button class="btn btn-secondary m-1" onclick="openTableInNewWindow()">Open Table in New Window</button>
+  </div>
+
+  <div id="stickerTable" class="mt-4"></div>
+
+  <script>
+    let cellWidth = 52.5;
+    let cellHeight = 29.7;
+
+    function updateSize() {
+      const size = document.getElementById("labelSize").value;
+      if (size === "40") {
+        cellWidth = 52.5;
+        cellHeight = 29.7;
+      } else if (size === "65") {
+        cellWidth = 38.1;
+        cellHeight = 21.2;
+      }
+    }
+
+    function generateStickers() {
+      const imageInput = document.getElementById("imageUpload");
+      const fitMode = document.getElementById("fitMode").value;
+      const autoRotate = document.getElementById("autoRotate").checked;
+
+      if (!imageInput.files.length) {
+        alert("Please upload at least one image.");
+        return;
+      }
+
+      const imageURLs = Array.from(imageInput.files).map((file) => URL.createObjectURL(file));
+
+      const A4Width = 210;
+      const A4Height = 297;
+      const columns = Math.floor(A4Width / cellWidth);
+      const rows = Math.floor(A4Height / cellHeight);
+
+      const stickerTable = document.getElementById("stickerTable");
+      stickerTable.style.gridTemplateColumns = `repeat(${columns}, ${cellWidth}mm)`;
+      stickerTable.style.gridTemplateRows = `repeat(${rows}, ${cellHeight}mm)`;
+      stickerTable.innerHTML = "";
+
+      for (let i = 0; i < rows * columns; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("sticker");
+        cell.style.width = `${cellWidth}mm`;
+        cell.style.height = `${cellHeight}mm`;
+
+        const img = document.createElement("img");
+        img.src = imageURLs[i % imageURLs.length];
+
+        if (autoRotate) {
+          img.onload = function () {
+            if ((img.naturalWidth > img.naturalHeight && cellHeight > cellWidth) ||
+                (img.naturalHeight > img.naturalWidth && cellWidth > cellHeight)) {
+              img.style.transform = "rotate(90deg)";
+            }
+          };
+        }
+
+        if (fitMode === "stretch") {
+          img.style.width = "100%";
+          img.style.height = "100%";
+        } else if (fitMode === "fill") {
+          img.style.objectFit = "cover";
+          img.style.width = "100%";
+          img.style.height = "100%";
+        } else if (fitMode === "fit") {
+          img.style.objectFit = "contain";
+          img.style.width = "100%";
+          img.style.height = "100%";
+        }
+
+        cell.appendChild(img);
+        stickerTable.appendChild(cell);
+      }
+    }
+  </script>
+</body>
+</html>
